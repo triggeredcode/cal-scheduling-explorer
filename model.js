@@ -23,7 +23,21 @@ export function mergeRanges(ranges){
  for(const [s,e]of a){const last=out.at(-1);if(last&&s<=last[1])last[1]=Math.max(last[1],e);else out.push([s,e]);}return out;
 }
 export function subtractRanges(source,busy){
- const excludes=mergeRanges(busy),out=[];for(const [s,e]of mergeRanges(source)){let cursor=s;for(const [bs,be]of excludes){if(bs>=e)break;if(be<=cursor)continue;if(bs>cursor)out.push([cursor,Math.min(bs,e)]);cursor=Math.max(cursor,be);if(cursor>=e)break;}if(cursor<e)out.push([cursor,e]);}return out;
+ const excludes=mergeRanges(busy),out=[];let j=0;
+ for(const [s,e]of mergeRanges(source)){
+  let cursor=s;
+  while(j<excludes.length&&excludes[j][1]<=cursor)j++;
+  while(j<excludes.length&&excludes[j][0]<e){
+   const [bs,be]=excludes[j];
+   if(bs>cursor)out.push([cursor,bs]);
+   cursor=Math.max(cursor,be);
+   // Retain an exclusion that spans this source's end: it can affect the next source too.
+   if(cursor>=e)break;
+   j++;
+  }
+  if(cursor<e)out.push([cursor,e]);
+ }
+ return out;
 }
 export function intersectRanges(a,b){
  a=mergeRanges(a);b=mergeRanges(b);let i=0,j=0,out=[];while(i<a.length&&j<b.length){const s=Math.max(a[i][0],b[j][0]),e=Math.min(a[i][1],b[j][1]);if(s<e)out.push([s,e]);if(a[i][1]<=b[j][1])i++;else j++;}return out;
